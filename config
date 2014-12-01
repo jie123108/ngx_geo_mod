@@ -1,0 +1,3 @@
+HTTP_MODULES="$HTTP_MODULES ngx_http_mm_geo_module"
+NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/ngx_http_mm_geo_mod.c $ngx_addon_dir/geodata.c"
+CFLAGS="$CFLAGS -DNGX_HTTP_REALIP"

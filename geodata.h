@@ -33,8 +33,11 @@ typedef struct {
 	uint32_t ip_begin;
 	uint32_t ip_end;
 	const char* province;
+	int province_len;
 	const char* city;
+	int city_len;
 	const char* isp;
+	int isp_len;
 }geo_result_t;
 
 typedef struct {
@@ -43,12 +46,15 @@ typedef struct {
 }geo_ctx_t;
 
 #define cvalue(indexs,buf, index) (&buf[indexs[index].begin])
-
+#define clength(indexs, index) (indexs[index].len)
 geo_ctx_t* geo_new();
 int geo_init(geo_ctx_t* geo_ctx, const char* geodatafile);
 void geo_destroy(geo_ctx_t* geo_ctx);
 int geo_find2(geo_ctx_t* geo_ctx, uint32_t ip, geo_result_t* result);
 int geo_find(geo_ctx_t* geo_ctx, const char* ip, geo_result_t* result);
 
+/// utils 
+const char* long2ip(uint32_t ip_long);
+uint32_t ip2long(const char *ip,int len);
 
 #endif

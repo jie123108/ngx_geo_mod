@@ -6,16 +6,23 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
-#include <stdlib.h>
+
 #include "geodata.h"
 
-static inline uint32_t ip2long(const char *ip,int len) {
+const char* long2ip(uint32_t ip_long){
+	struct in_addr addr;
+	addr.s_addr = htonl(ip_long);
+	return inet_ntoa(addr);
+}
+
+uint32_t ip2long(const char *ip,int len) {
     uint32_t ip_long=0;
-    uint8_t ip_len= len > 0 ? len: strlen(ip);
+    int ip_len= len > 0 ? len: (int)strlen(ip);
 	
     uint32_t ip_sec=0;
     int8_t ip_level=3;
@@ -56,7 +63,8 @@ int geo_init(geo_ctx_t* geo_ctx, const char* geodatafile)
 	int ret = 0;
 	int fd = open(geodatafile, O_RDONLY);
 	if(fd <= 0){
-		printf("ERROR: open file(%s) failed! %d err:%s\n", errno, strerror(errno));
+		printf("ERROR: open file(%s) failed! %d err:%s\n", 
+					geodatafile, errno, strerror(errno));
 		return -1;
 	}
 
@@ -168,8 +176,11 @@ int geo_find2(geo_ctx_t* geo_ctx, uint32_t ip, geo_result_t* result)
 	const_index_t* indexs = (const_index_t*)(geo_ctx->ptr + sizeof(geo_head_t));
 	const char* buf = geo_ctx->ptr + geo_head->const_table_offset;
 	result->province = cvalue(indexs, buf, find_item->province);
+	result->province_len = clength(indexs, find_item->province)-1;
 	result->city= cvalue(indexs, buf, find_item->city);
+	result->city_len = clength(indexs, find_item->city)-1;
 	result->isp = cvalue(indexs, buf, find_item->isp);
+	result->isp_len = clength(indexs, find_item->isp)-1;
 	
 	return 0;
 }
@@ -182,12 +193,6 @@ int geo_find(geo_ctx_t* geo_ctx, const char* ip, geo_result_t* result)
 
 
 #ifdef _TOOLS_
-
-static inline const char* long2ip(uint32_t ip_long){
-	struct in_addr addr;
-	addr.s_addr = htonl(ip_long);
-	return inet_ntoa(addr);
-}
 
 const char* long2ip2(uint32_t ip_long, char* szbuf){
 	const char* p = long2ip(ip_long);

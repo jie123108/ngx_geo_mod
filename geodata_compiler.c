@@ -14,6 +14,45 @@
 #include "geodata.h"
 #include "array.h"
 
+const char* long2ip(uint32_t ip_long){
+	struct in_addr addr;
+	addr.s_addr = htonl(ip_long);
+	return inet_ntoa(addr);
+}
+
+uint32_t ip2long(const char *ip,int len) {
+    uint32_t ip_long=0;
+    int ip_len= len > 0 ? len: (int)strlen(ip);
+	
+    uint32_t ip_sec=0;
+    int8_t ip_level=3;
+    uint8_t i,n;
+    for (i=0;i<=ip_len;i++) {
+        if (i!=ip_len && ip[i]!='.' && (ip[i]<48 || ip[i]>57)) {
+            continue;
+        }
+        if (ip[i]=='.' || i==ip_len) {
+            /*too many .*/
+            if (ip_level==-1) {
+                return 0;
+            }
+            for (n=0;n<ip_level;n++) {
+                ip_sec*=256;
+            }
+            ip_long+=ip_sec;
+            if (i==ip_len) {
+                break;
+            }
+            ip_level--;
+            ip_sec=0;
+        } else {
+            /*char '0' == int 48*/
+            ip_sec=ip_sec*10+(ip[i]-48);
+        }
+    }
+    return ip_long;
+}
+
 #define LOG_BUF_LEN 2048
 
 void ReleasePrint(const char* LEVEL, const char* funcName, 
@@ -56,45 +95,6 @@ char* trim(char* s, int c){
 	while(s[i] != 0 && s[i] == c)i++;
 
 	return &s[i];
-}
-
-inline const char* long2ip(uint32_t ip_long){
-	struct in_addr addr;
-	addr.s_addr = htonl(ip_long);
-	return inet_ntoa(addr);
-}
-
-inline uint32_t ip2long(const char *ip,int len) {
-    uint32_t ip_long=0;
-    uint8_t ip_len= len > 0 ? len: strlen(ip);
-	
-    uint32_t ip_sec=0;
-    int8_t ip_level=3;
-    uint8_t i,n;
-    for (i=0;i<=ip_len;i++) {
-        if (i!=ip_len && ip[i]!='.' && (ip[i]<48 || ip[i]>57)) {
-            continue;
-        }
-        if (ip[i]=='.' || i==ip_len) {
-            /*too many .*/
-            if (ip_level==-1) {
-                return 0;
-            }
-            for (n=0;n<ip_level;n++) {
-                ip_sec*=256;
-            }
-            ip_long+=ip_sec;
-            if (i==ip_len) {
-                break;
-            }
-            ip_level--;
-            ip_sec=0;
-        } else {
-            /*char '0' == int 48*/
-            ip_sec=ip_sec*10+(ip[i]-48);
-        }
-    }
-    return ip_long;
 }
 
 typedef struct {
