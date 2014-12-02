@@ -77,12 +77,6 @@ void ReleasePrint(const char* LEVEL, const char* funcName,
 	va_end(args); 
 }
 
-#define LOG_DEBUG(format, args...) \
-		ReleasePrint("DEBUG", __FUNCTION__, __FILE__, __LINE__, format, ##args)
-#define LOG_INFO(format, args...) \
-        ReleasePrint(" INFO", __FUNCTION__, __FILE__, __LINE__, format, ##args)
-#define LOG_WARN(format, args...) \
-        ReleasePrint(" WARN", __FUNCTION__, __FILE__, __LINE__, format, ##args)
 #define LOG_ERROR(format, args...) \
         ReleasePrint("ERROR", __FUNCTION__, __FILE__, __LINE__, format, ##args)
 
@@ -189,11 +183,14 @@ int gendata_compile(const char* filename, const char* output, int force)
 		exit(1);
 	}
 
+	geo_item_t* geo_item = NULL;
+	int curline = 0;
 	do{
 		char line[256];
 		memset(line,0,sizeof(line));
 		char* ret = fgets(line, sizeof(line), fp);
 		if(ret == NULL) break;
+		curline++;
 		//LOG_DEBUG("Read line [%s]", line);
 		ret = trim(ret, '\n');
 		ret = trim(ret, '\r');
@@ -208,13 +205,25 @@ int gendata_compile(const char* filename, const char* output, int force)
 		memzero(szisp,sizeof(szisp));
 		n = sscanf(line, "%s %s %s %s %s", szbegin,szend,szprovince,szcity,szisp);
 		if(n != 5){
-			LOG_ERROR("Invalid Ip line [%s] n=%d", line, n);
+			LOG_ERROR("Invalid Ip line %d [%s] n=%d", curline, line, n);
 			continue;
 		}
 		ip_begin = ip2long(szbegin, strlen(szbegin));
 		ip_end = ip2long(szend, strlen(szend));
+		
+		if(ip_end < ip_begin){
+			LOG_ERROR("Invalid Ip line %d [%s], ip_end[%u] < ip_begin[%u]", 
+							curline, line, ip_end, ip_begin);
+			continue;
+		}
+		//IP数据必须是按升序排好序的。
+		if(geo_item != NULL && ip_begin <= geo_item->ip_end){
+			LOG_ERROR("geo data file [%s] must be in ascending order.", filename);
+			LOG_ERROR("in line %d: %s", curline, line);
+			exit(1);
+		}
 
-		geo_item_t* geo_item = (geo_item_t*)array_push(arr_items);
+		geo_item = (geo_item_t*)array_push(arr_items);
 		geo_item->ip_begin = ip_begin;
 		geo_item->ip_end = ip_end;
 		geo_item->province = get_const_index(arr_const_indexs, 
@@ -278,6 +287,8 @@ int gendata_compile(const char* filename, const char* output, int force)
 			break;
 		}
 		ret = 0;
+		printf("--------- Compile %s OK\n", filename);
+		printf("--------- Output: %s\n", output);
 	}while(0);
 
 	array_destroy(arr_const_indexs);
@@ -287,7 +298,7 @@ int gendata_compile(const char* filename, const char* output, int force)
 		close(fd);
 	}
 	
-	return 0;
+	return ret;
 }
 
 
@@ -299,10 +310,15 @@ int main(int argc, char* argv[])
 	}
 
 	const char* filename = argv[1];
+	
 	char output[256];
 	memset(output, 0, sizeof(output));
-	sprintf(output, "%s.geo", filename);
-
-	 
+	sprintf(output, "%s", filename);
+	char* dot_index = rindex(output, '.');
+	if(dot_index == NULL){
+		strcat(output, ".geo");
+	}else{
+		sprintf(dot_index, ".geo");
+	}
 	gendata_compile(filename, output, 1);
 }

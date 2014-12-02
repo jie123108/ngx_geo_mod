@@ -1,6 +1,10 @@
 #ifndef __GEODATA_H__
 #define __GEODATA_H__
 #include <stdint.h>
+/**************************************************************
+| geo_head_t |const_index_t[geo_head_t.const_count] | const table |geo_item_t[geo_head_t.geo_item_count] |
+sizeof(const table) = geo_head_t.geo_item_offset-geo_head_t.const_table_offset
+***************************************************************/
 
 #define GEODATA_MAGIC 0x9E00
 

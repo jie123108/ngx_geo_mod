@@ -58,6 +58,52 @@ geo_ctx_t* geo_new()
 	return (geo_ctx_t*)calloc(1, sizeof(geo_ctx_t));
 }
 
+#define idx_is_valid(i, c) (i.begin >=0 && i.begin < c && (i.begin+i.len) >=0 && (i.begin+i.len)<=c)
+#define item_is_valid(i, c) (i.province<c && i.city < c && i.isp < c)
+int geo_verify(geo_ctx_t* geo_ctx)
+{
+	geo_head_t* geo_head = (geo_head_t*)geo_ctx->ptr;
+	if(geo_head->magic != GEODATA_MAGIC){
+		printf("ERROR: invalid magic: 0x%04x\n", geo_head->magic);
+		return -1;
+	}
+	unsigned int const_count = (geo_head->const_table_offset-sizeof(geo_head_t))/sizeof(const_index_t);
+	if(const_count != geo_head->const_count){
+		printf("ERROR: geo_head.const_count: %u != calculate const_count: %u\n",
+						geo_head->const_count, const_count);
+		return -1;
+	}
+	unsigned int i;
+	const_index_t* indexs = (const_index_t*)(geo_ctx->ptr + sizeof(geo_head_t));
+	int const_pool_size = geo_head->geo_item_offset-geo_head->const_table_offset;
+	for(i=0;i<const_count;i++){
+		if(!idx_is_valid(indexs[i], const_pool_size)){
+			printf("ERROR: indexs[%d].begin:%d, len:%d not in constant pool: 0-%d\n",
+				i, indexs[i].begin, indexs[i].len, const_pool_size);
+			return -1;
+		}			
+	}
+
+	unsigned int geo_item_count = (geo_ctx->size - geo_head->geo_item_offset)/sizeof(geo_item_t);
+	if(geo_item_count != geo_head->geo_item_count){
+		printf("ERROR: geo_head.geo_item_count: %u != calculate geo_item_count: %u\n",
+						geo_head->geo_item_count, geo_item_count);
+		return -1;
+	}
+
+	geo_item_t* items = (geo_item_t*)(geo_ctx->ptr + geo_head->geo_item_offset);
+	for(i=0;i<geo_head->geo_item_count;i++){
+		if(!item_is_valid(items[i], const_count)){
+			printf("ERROR: geo_item[%d].province:%d, city:%d, isp:%d index great then const_count: %d\n",
+				i, items[i].province, items[i].city, items[i].isp, const_count);
+			return -1;
+		}
+	}
+	
+	return 0;
+}
+
+// TODO: file verify..
 int geo_init(geo_ctx_t* geo_ctx, const char* geodatafile)
 {
 	int ret = 0;
@@ -81,10 +127,17 @@ int geo_init(geo_ctx_t* geo_ctx, const char* geodatafile)
 		}
 	}else{
 		geo_head_t* geo_head = (geo_head_t*)shm;
+		geo_ctx->ptr = (char*)shm;
 		if(geo_head->magic != GEODATA_MAGIC){
 			ret = -4;
 			printf("read invalid geo magic: 0x%04x\n", geo_head->magic);
 			munmap(shm, geo_ctx->size);
+			geo_ctx->ptr = NULL;
+		}else if(geo_verify(geo_ctx)!=0){
+			ret = -4;
+			printf("invalid geo file: %s\n", geodatafile);
+			munmap(shm, geo_ctx->size);
+			geo_ctx->ptr = NULL;
 		}else{
 			geo_ctx->ptr = (char*)shm;
 			ret = 0;
@@ -221,7 +274,11 @@ int main(int argc, char* argv[])
 		memset(input,0,sizeof(input));
 		printf("Input a ip:");
 		scanf("%s", input);
-		if(strcmp(input,"exit")==0) break;
+		if(strcmp(input,"exit")==0){
+			break;
+		}else if(strcmp(input, "info")==0){
+			
+		}
 
 		memset(&result, 0, sizeof(result));
 		ret = geo_find(geo_ctx, input, &result);

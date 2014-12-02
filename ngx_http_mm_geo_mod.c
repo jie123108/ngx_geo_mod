@@ -168,10 +168,11 @@ ngx_uint_t ngx_http_get_remote_ip(ngx_http_request_t *r){
 		ngx_str_t* real_ip;
 		
 		if(conf->ip_from_url){
-		//用于测试，从URL中获取IP信息。
+			//用于测试，从URL中获取IP信息。
 			ngx_str_t szip = ngx_null_string;
 			if(ngx_http_arg(r, (u_char*)"ip", 2, &szip)==NGX_OK){
 				ip = ip2long((const char*)szip.data, szip.len);
+				//ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "### ip from url ");
 				break;
 			}
 		}
@@ -180,6 +181,8 @@ ngx_uint_t ngx_http_get_remote_ip(ngx_http_request_t *r){
 			if(r->headers_in.x_real_ip != NULL){
 				real_ip = &r->headers_in.x_real_ip->value;
 				ip = ip2long((const char*)real_ip->data, real_ip->len);
+				//ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "### ip from x_real_ip ");
+				break;
 			}
 
 #if nginx_version>XFWD_NEW_VER
@@ -194,6 +197,7 @@ ngx_uint_t ngx_http_get_remote_ip(ngx_http_request_t *r){
 		                                           conf->proxies, conf->proxies_recursive);
 		        struct sockaddr_in * sin = (struct sockaddr_in *) addr.sockaddr;
 				ip =  ntohl(sin->sin_addr.s_addr);
+				//ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "### ip from x_forwarded_for ");
 				break;
 		    }
 #else
@@ -207,12 +211,14 @@ ngx_uint_t ngx_http_get_remote_ip(ngx_http_request_t *r){
 				}
 				real_ip->len = i;				
 				ip = ip2long((const char*)real_ip->data, real_ip->len);
+				//ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "### ip from x_forwarded_for ");
 				break;
 			}
 #endif
 		}
 		struct sockaddr_in * sin = (struct sockaddr_in *)r->connection->sockaddr;
 		ip =  ntohl(sin->sin_addr.s_addr);
+		//ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "### ip from socket ");
 	}while(0);
 
 	return ip;
@@ -234,6 +240,7 @@ ngx_int_t ngx_http_mm_geo_handler(ngx_http_request_t *r)
     gmcf = ngx_http_get_module_main_conf(r, ngx_http_mm_geo_module);
 
 	uint32_t remote_ip = ngx_http_get_remote_ip(r);
+	ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "remote_ip: %uD", remote_ip);
 	char* szip = (char*)ngx_pcalloc(r->pool, 32);
 	ngx_memzero(szip, 32);
 	const char* sip = long2ip(remote_ip);
@@ -278,7 +285,7 @@ static void* ngx_http_mm_geo_create_main_conf(ngx_conf_t *cf)
 	conf->ip_from_url = NGX_CONF_UNSET;
 	conf->ip_from_head = NGX_CONF_UNSET;
 #if nginx_version>XFWD_NEW_VER  
-	conf->proxies = (ngx_array_t*)NULL;
+	conf->proxies = NGX_CONF_UNSET_PTR;
 	conf->proxies_recursive = NGX_CONF_UNSET;
 #endif
 
@@ -303,7 +310,6 @@ static char*   ngx_http_mm_geo_init_main_conf(ngx_conf_t *cf, void *conf)
 	if(gmcf->ip_from_head == NGX_CONF_UNSET)gmcf->ip_from_head = 0;
 	if(gmcf->geodata_file.data == NULL) gmcf->geodata_file = def_file;
 	#if nginx_version>XFWD_NEW_VER 
-		if(gmcf->proxies == NULL) gmcf->proxies = NULL;
 		if(gmcf->proxies_recursive == NGX_CONF_UNSET) gmcf->proxies_recursive = 1;
 	#endif
 

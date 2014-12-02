@@ -60,7 +60,7 @@ function _M.init(filename)
 		elseif ret == -3 then
 			errmsg = "mmap failed!"
 		elseif ret == -4 then
-			errmsg = "geo data magic invalid!"
+			errmsg = "geo data file invalid!"
 		else
 			errmsg = "unknow"
 		end
