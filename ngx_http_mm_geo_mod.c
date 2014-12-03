@@ -192,7 +192,9 @@ ngx_uint_t ngx_http_get_remote_ip(ngx_http_request_t *r){
 				memset(&addr,0,sizeof(addr));
 			    addr.sockaddr = r->connection->sockaddr;
 			    addr.socklen = r->connection->socklen;
-			    
+			    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+							"proxies_recursive: %d", 
+							conf->proxies_recursive);
 		        (void) ngx_http_get_forwarded_addr(r, &addr, xfwd, NULL,
 		                                           conf->proxies, conf->proxies_recursive);
 		        struct sockaddr_in * sin = (struct sockaddr_in *) addr.sockaddr;
@@ -238,7 +240,10 @@ ngx_int_t ngx_http_mm_geo_handler(ngx_http_request_t *r)
 
 	ngx_http_mm_geo_main_conf_t   *gmcf;
     gmcf = ngx_http_get_module_main_conf(r, ngx_http_mm_geo_module);
-
+	if(gmcf->geo_ctx == NULL || gmcf->geo_ctx->ptr == NULL){
+		return NGX_OK;
+	}
+	
 	uint32_t remote_ip = ngx_http_get_remote_ip(r);
 	ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "remote_ip: %uD", remote_ip);
 	char* szip = (char*)ngx_pcalloc(r->pool, 32);
@@ -285,7 +290,6 @@ static void* ngx_http_mm_geo_create_main_conf(ngx_conf_t *cf)
 	conf->ip_from_url = NGX_CONF_UNSET;
 	conf->ip_from_head = NGX_CONF_UNSET;
 #if nginx_version>XFWD_NEW_VER  
-	conf->proxies = NGX_CONF_UNSET_PTR;
 	conf->proxies_recursive = NGX_CONF_UNSET;
 #endif
 
@@ -305,12 +309,11 @@ static void* ngx_http_mm_geo_create_main_conf(ngx_conf_t *cf)
 static char*   ngx_http_mm_geo_init_main_conf(ngx_conf_t *cf, void *conf)
 {
 	ngx_http_mm_geo_main_conf_t  *gmcf = conf;
-	static ngx_str_t def_file = ngx_string("conf/geodata.geo");
-	if(gmcf->ip_from_url == NGX_CONF_UNSET)gmcf->ip_from_url = 0;
-	if(gmcf->ip_from_head == NGX_CONF_UNSET)gmcf->ip_from_head = 0;
-	if(gmcf->geodata_file.data == NULL) gmcf->geodata_file = def_file;
+	ngx_conf_init_value(gmcf->ip_from_url, 0);
+	ngx_conf_init_value(gmcf->ip_from_head, 0);
+
 	#if nginx_version>XFWD_NEW_VER 
-		if(gmcf->proxies_recursive == NGX_CONF_UNSET) gmcf->proxies_recursive = 1;
+		ngx_conf_init_value(gmcf->proxies_recursive, 0);
 	#endif
 
 	return NGX_CONF_OK;
@@ -435,7 +438,7 @@ static char *ngx_http_mm_geo_proxies(ngx_conf_t *cf, ngx_command_t *cmd, void *c
 	ngx_array_t      **a;
 	a = (ngx_array_t **) (p + cmd->offset);
 
-	if (*a == NGX_CONF_UNSET_PTR) {
+	if (*a == NULL) {
 		*a = ngx_array_create(cf->pool, 2, sizeof(ngx_cidr_t));
 		if (*a == NULL) {
 		    return (char*)NGX_CONF_ERROR;

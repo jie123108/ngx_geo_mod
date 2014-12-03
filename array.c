@@ -66,3 +66,4 @@ void* array_push(array_t *a)
 
     return elt;
 }
+
