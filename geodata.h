@@ -14,7 +14,8 @@ typedef struct {
 	uint32_t const_table_offset;
 	uint32_t geo_item_count;
 	uint32_t geo_item_offset;
-	char rest[12]; //保留字段。
+	uint32_t filesize; //geo文件大小。
+	char rest[8]; //保留字段。
 }geo_head_t;
 
 /**
@@ -46,7 +47,7 @@ typedef struct {
 
 typedef struct {
 	char* ptr;
-	int size;
+	uint32_t size;
 }geo_ctx_t;
 
 #define cvalue(indexs,buf, index) (&buf[indexs[index].begin])

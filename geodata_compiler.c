@@ -246,7 +246,7 @@ int gendata_compile(const char* filename, const char* output, int force)
 			ret = -1;
 			break;
 		}
-
+		
 		geo_head_t geo_head;
 		memzero(&geo_head, sizeof(geo_head));
 		geo_head.magic = GEODATA_MAGIC;
@@ -255,33 +255,38 @@ int gendata_compile(const char* filename, const char* output, int force)
 					+ arr_const_indexs->nelts * sizeof(const_index_t);
 		geo_head.geo_item_count = arr_items->nelts;
 		geo_head.geo_item_offset = geo_head.const_table_offset + const_bufs->pos;
-		int write_len = sizeof(geo_head);
-		ret = write(fd, &geo_head, write_len);
-		if(ret != write_len){
+
+		int geo_head_size = sizeof(geo_head);
+		int const_table_size = arr_const_indexs->nelts * sizeof(const_index_t);
+		int const_pool_size = const_bufs->pos;
+		int items_size = arr_items->nelts * sizeof(geo_item_t);
+		geo_head.filesize = geo_head_size + const_table_size + const_pool_size + items_size;
+		
+		
+		ret = write(fd, &geo_head, geo_head_size);
+		if(ret != geo_head_size){
 			LOG_ERROR("write geo_head to [%s] failed!", output);
 			ret = -1;
 			break;
 		}
 
-		write_len = arr_const_indexs->nelts * sizeof(const_index_t);
-		ret = write(fd, arr_const_indexs->elts, write_len);
-		if(ret != write_len){
+		ret = write(fd, arr_const_indexs->elts, const_table_size);
+		if(ret != const_table_size){
 			LOG_ERROR("write const_index to [%s] failed!", output);
 			ret = -1;
 			break;
 		}
 
-		write_len = const_bufs->pos;
-		ret = write(fd, const_bufs->buf, write_len);
-		if(ret != write_len){
+		const_pool_size = const_bufs->pos;
+		ret = write(fd, const_bufs->buf, const_pool_size);
+		if(ret != const_pool_size){
 			LOG_ERROR("write const_bufs to [%s] failed!", output);
 			ret = -1;
 			break;
 		}
 
-		write_len = arr_items->nelts * sizeof(geo_item_t);
-		ret = write(fd, arr_items->elts, write_len);
-		if(ret != write_len){
+		ret = write(fd, arr_items->elts, items_size);
+		if(ret != items_size){
 			LOG_ERROR("write const_index to [%s] failed!", output);
 			ret = -1;
 			break;
@@ -289,6 +294,12 @@ int gendata_compile(const char* filename, const char* output, int force)
 		ret = 0;
 		printf("--------- Compile %s OK\n", filename);
 		printf("--------- Output: %s\n", output);
+		printf("| PART | GEO_HEAD | CONST_TABLE | CONST_POOL | GEO_ITEMS |\n");
+		printf("----------------------------------------------------------\n");
+		printf("| SIZE | %8d | %6d(%d) | %10d | %4d(%d) |\n",
+				geo_head_size,const_table_size,arr_const_indexs->nelts, 
+				const_pool_size,  items_size,arr_items->nelts);
+
 	}while(0);
 
 	array_destroy(arr_const_indexs);

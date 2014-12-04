@@ -32,8 +32,11 @@ function _M.init(filename)
 		uint32_t ip_begin;
 		uint32_t ip_end;
 		const char* province;
+		int province_len;
 		const char* city;
+		int city_len;
 		const char* isp;
+		int isp_len;
 	}geo_result_t;
 
 	typedef struct {

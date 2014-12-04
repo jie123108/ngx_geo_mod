@@ -15,6 +15,19 @@ our $http_config = <<"_EOF_";
     ip_from_head on;
     mm_geo on;
     proxies 127.0.0.1;
+    proxies 1.2.3.4/32;
+    proxies_recursive on;
+_EOF_
+
+our $http_config_proxies_not_set = <<"_EOF_";
+    geodata_file $pwd/t/geo_data.geo;
+    ip_from_head on;
+    mm_geo on;
+_EOF_
+
+our $http_config_geodata_file_not_set = <<"_EOF_";
+    ip_from_url on;
+    mm_geo on;
 _EOF_
 
 our $location = <<"_EOF_";
@@ -118,3 +131,26 @@ GET /area?ip=240.240.240.240
 --- error_code: 200
 --- response_body
 240.240.240.240,,,unknow
+
+=== Test 8: geodata_file not set
+--- http_config eval: $::http_config_geodata_file_not_set
+--- config eval: $::location
+--- timeout: 16
+--- request
+GET /area?ip=3.4.5.6
+--- error_code: 200
+--- response_body
+,,,
+
+
+=== Test 9: proxies not set
+--- http_config eval: $::http_config_proxies_not_set
+--- config eval: $::location
+--- timeout: 16
+--- request
+GET /area
+--- more_headers
+X-Forwarded-For: 1.2.3.4
+--- error_code: 200
+--- response_body
+127.0.0.1,WLAN,WLAN,WLAN

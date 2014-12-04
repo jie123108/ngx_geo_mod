@@ -1,7 +1,7 @@
 local geo = require("geo")
 
 
-local ok, geo_ctx = geo.init("./top20.txt.geo")
+local ok, geo_ctx = geo.init("./top20.geo")
 if not ok then
 	print("geo.init(%s) failed! err:", geo_ctx)
 	return

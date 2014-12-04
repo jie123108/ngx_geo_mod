@@ -245,7 +245,7 @@ ngx_int_t ngx_http_mm_geo_handler(ngx_http_request_t *r)
 	}
 	
 	uint32_t remote_ip = ngx_http_get_remote_ip(r);
-	ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "remote_ip: %uD", remote_ip);
+	//ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "remote_ip: %uD", remote_ip);
 	char* szip = (char*)ngx_pcalloc(r->pool, 32);
 	ngx_memzero(szip, 32);
 	const char* sip = long2ip(remote_ip);
@@ -423,6 +423,7 @@ static void ngx_http_mm_geo_cleanup(void *data)
         geo_destroy(gcf->geo_ctx);
 		gcf->geo_ctx = NULL;
     }
+	//printf("############ cleanup ##########\n");
 }
 
 #if nginx_version>XFWD_NEW_VER  

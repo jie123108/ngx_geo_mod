@@ -67,6 +67,12 @@ int geo_verify(geo_ctx_t* geo_ctx)
 		printf("ERROR: invalid magic: 0x%04x\n", geo_head->magic);
 		return -1;
 	}
+	if(geo_head->filesize != geo_ctx->size){
+		printf("ERROR: geo_head.filesize(%u) != real filesize(%u)\n", 
+			geo_head->filesize, geo_ctx->size);
+		return -1;
+	}
+	
 	unsigned int const_count = (geo_head->const_table_offset-sizeof(geo_head_t))/sizeof(const_index_t);
 	if(const_count != geo_head->const_count){
 		printf("ERROR: geo_head.const_count: %u != calculate const_count: %u\n",
@@ -166,7 +172,22 @@ int geo_find2(geo_ctx_t* geo_ctx, uint32_t ip, geo_result_t* result)
 	assert(geo_ctx->ptr != NULL);
 	geo_head_t* geo_head = (geo_head_t*)geo_ctx->ptr;
 	geo_item_t* items = (geo_item_t*)(geo_ctx->ptr + geo_head->geo_item_offset);
-
+	/**
+	printf("### geo_head: const_count:%u,"
+		"const_table_offset:%u,"
+		"geo_item_count:%u,"
+		"geo_item_offset:%u\n"
+		"filesize: %u\n", 
+				geo_head->const_count, geo_head->const_table_offset,
+				geo_head->geo_item_count, geo_head->geo_item_offset,
+				geo_head->filesize); 
+	**/
+	if(geo_head->filesize != geo_ctx->size){
+		printf("INFO: geo data file changed! filesize(%u) change to : %u\n",
+					geo_ctx->size, geo_head->filesize);
+		geo_ctx->size = geo_head->filesize;
+	}
+	
 	int size = geo_head->geo_item_count;
 	if(size < 1){
 		return -1;
