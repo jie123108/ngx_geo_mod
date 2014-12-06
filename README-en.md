@@ -1,28 +1,26 @@
 ﻿# Nginx mmap geo module
-   ngx_geo_mod 是一个地理位置信息查询模块。其根据客户端IP查询出对应的省份，城市，ISP信息，写入请求头。
+ngx_geo_mod is a geographic location information module. According to the client IP query it the provinces, cities, ISP information, write to http request header.(Baidu Translate)
    
-   本模块包含一个将文本格式的地理位置信息编译成二进制数据的编译器。模块运行时直接使用二进制数据，并且采用mmap方式加载文件，不需要任何解析过程。
-
-[English Version Of Readme](README-en.md)
+   This module contains a compiler that compiled text format geo data into binary data. This module use of this binary data, and the use of mmap to load the file to memory, does not require any analytical process.
 
 # Table of Contents
-* [完整示例](#synopsis)
-* [Nginx兼容性](#compatibility)
-* [模块编译](#installation)
-* [编译GEO编译器](#compile-the-geo-compiler)
-* [模块指令](#directives)
+* [synopsis](#synopsis)
+* [Nginx Compatibility](#compatibility)
+* [Installation](#installation)
+* [Compile The Geo Compiler](#compile-the-geo-compiler)
+* [Directives](#directives)
     * [geodata_file](#geodata_file)
     * [mm_geo](#mm_geo)
     * [ip_from_url](#ip_from_url)
     * [ip_from_head](#ip_from_head)
     * [proxies](#proxies)
     * [proxies_recursive](#proxies_recursive)
-* [获取IP的方式](#gets-the-ip-order)
-* [变量的使用](#variable-usage)
-* [编译器的使用](#compile-geo-data-file)
-    * [数据文件格式](#geo-data-file-format)
-    * [编译数据文件](#compile-data-file)
-    * [使用geot测试二进制GEO文件](#test-binary-geo-data-file-by-geot)
+* [Gets The IP Order](#gets-the-ip-order)
+* [Variable Usage](#variable-usage)
+* [Compile Geo Data File](#compile-geo-data-file)
+    * [Geo Data File Format](#geo-data-file-format)
+    * [Compile Geo Data File](#compile-data-file)
+    * [Test Geo Data File By geot](#test-binary-geo-data-file-by-geot)
 
 # Synopsis
 ```nginx
@@ -70,7 +68,7 @@ http {
 
 ```
 # Compatibility
-本模块兼容以下版本nginx:
+This module is compatible with the following version of nginx:
 * 1.7.x (last tested: 1.7.4)
 * 1.6.x (last tested: 1.6.1)
 * 1.4.x (last tested: 1.4.7)
@@ -79,7 +77,7 @@ http {
 
 # Installation
 ```shell
-# echo-nginx-module只是测试时需要使用,本模块并不依赖它。
+# echo-nginx-module is for testing only,  this module does not depend on it.
 cd nginx-1.x.x
 ./configure --add-module=path/to/ngx_geo_mod \
             --add-module=path/to/echo-nginx-module
@@ -95,9 +93,9 @@ make
 >gcc -D_TOOLS_ -g geodata.c -o geot
 >gcc -g -Werror geodata.c -fPIC -shared -o libgeo.so
 ```
-* geoc是GEO编译器
-* geot是GEO数据文件测试程序
-* libgeo.so 是动态库，可以在各种程序中调用该模块。
+* geoc: is the geo data compiler.
+* geot: is test program for the geo data.
+* libgeo.so is dynamic library.
 
 # Directives
 * [geodata_file](#geodata_file)
@@ -115,7 +113,7 @@ geodata_file
 
 **context:** *http*
 
-指定二进制的GEO数据文件路径。该数据文件使用geoc编译生成。生成方法参考[编译器的使用](#compile-geo-data-file)
+Specified The GEO data file path. The data file using geoc compiled.[Compile Geo Data File](#compile-geo-data-file)
 
 mm_geo
 ----------
@@ -125,13 +123,13 @@ mm_geo
 
 **context:** *http*,*server*,*location*,*location if*
 
-打开或者关闭geo模块。打开GEO模块后，HTTP请求头中会添加4个自定义头：
-* x-province *省份信息*
-* x-city *城市信息*
-* x-isp *ISP信息*
+Open or close the geo module. If open the GEO module, the HTTP request header will add 4 custom head:
+* x-province *province info*
+* x-city *city info*
+* x-isp *ISP info*
 * x-ip *IP*
 
-请求头可以在nginx各种模块中使用。使用方法见[变量的使用](#variable-usage)。
+Those request heads can by used in other modules, See also: [Variable Usage](#variable-usage)。
 
 ip_from_url
 ----------
@@ -141,8 +139,8 @@ ip_from_url
 
 **context:** *http*
 
-设置是否可以从HTTP请求参数中获取IP信息，该指令主要用于测试。
-打开后，可以通过get参数*ip*指定IP信息，如： `http://server/url?ip=192.168.1.40 `
+If set to on, module can be get IP info by request args,  the instruction is mainly used for testing.
+if set to on, Can set the IP info by http args *ip*, such as： `http://server/url?ip=192.168.1.40 `
 
 
 ip_from_head
@@ -153,7 +151,8 @@ ip_from_head
 
 **context:** *http*
 
-设置是可以从HTTP请求头获取IP地址信息，当设置成on时，模块会获取X-Real-IP或X-Forwarded-For中的IP地址。当nginx前端是代理时可使用该选项。
+If set to on, module can be get IP info by Request Header “X-Real-IP” or “X-Forwarded-For”, When the nginx front end have a agent can use this option.
+
 
 proxies
 ----------
@@ -162,8 +161,7 @@ proxies
 **default:** *--*
 
 **context:** *http*
-
-设置受信任的代理地址。当需要从请求头X-Forwarded-For中获取IP地址，并且nginx版本大于1.3.13时需要使用该指令。
+Defines trusted addresses. When a request comes from a trusted address, an address from the “X-Forwarded-For” request header field will be used instead.
 
 proxies_recursive
 ----------
@@ -178,21 +176,21 @@ If recursive search is disabled, the original client address that matches one of
 If recursive search is enabled, the original client address that matches one of the trusted addresses is replaced by the last non-trusted address sent in the request header field.
 
 # Gets The IP Order
-GEO模块获取IP地址的的顺序如下：
-* 如果ip_from_url开启了，从请求GET参数ip中获取。
-* 如果ip_from_head开启了：
-    * 先从请求头X-Real-IP中获取，如果没有，从请求头X-Forwarded-For中获取。
-* 如果以上两个选项都未开启，使用socket中的实际IP地址。
+The GEO module to obtain IP address in the order as follows:
+* if ip_from_url set to on, get IP info from http get args “ip”。
+* if ip_from_head set to on,get IP info from request head “X-Real-IP”，if have not, from request head “X-Forwarded-For”.
+* Otherwise, the use IP of socket.
 
 # Variable Usage
-mm_geo指令设置成on后，如果查找到相应的GEO信息，会添加4个自定义信息到请求头中。请求头见指令[mm_geo](#mm_geo)。这些请求头可以跟其它请求头一样在nginx各模块中引用。访问方式是：$http_请求头 。
-* 在access log中使用：
+Instruction mm_geo set to on, If find the geo info, will add 4 geo info to the request headers。Those request headers can use in other module, Used for $http_HEADER-NAME.
+
+* Used in access log:
 
 ```nginx
 log_format  main  '$http_x_province $http_x_city $http_x_isp xxxx';
 ```
 
-* 在echo模块中使用
+* Used in echo module:
 
 ```nginx
 location /area {
@@ -206,7 +204,7 @@ location /area {
 
 # Compile Geo Data File
 ##### Geo Data File Format
-使用编译器编译GEO前，先准备好相应的文本格式数据文件。文件格式如下：
+Before using the compiler GEO, prepared text format data file. The file format is as follows:
 ```
 ################# comment ##################
 1.2.3.0  1.2.3.255   BeiJing   BeiJing Unicom
@@ -214,9 +212,9 @@ location /area {
 1.2.5.0  1.3.5.255   BeiJing   BeiJing Mobile
 2.1.1.0  2.1.2.255   HuBei Wuhan Unicom
 ```
-* 以#开头的行为注释，编译器会直接忽略掉。
-* 数据一共5列，分别为：IP段开始值，开始段结束值，省份，城市，ISP。列之间以一个或多个空格(或Tab)分割。
-* 数据必须是按IP排好序的。否则编译时会出错。注意：如果IP段有包含关系，同样会判定为未排序的，会导致编译错误。
+* # comments
+* Data have 5 column，Respectively for：IP-begin，IP-end，Province，City，ISP。Between the columns are divided by one or more spaces(or Tab)。
+* IP data must be sorted by ip. Otherwise you will get a compiler error. Note: a  IP segment can not contains anther IP segment.
 
 ##### Compile Data File
 ```shell
@@ -224,12 +222,11 @@ location /area {
 --------- Compile geodata.txt OK
 --------- Output: geodata.geo
 ```
-编译好之后，就可以拿geodata.geo去mm_geo模块中使用了。
+After compilation, datafile.geo can be used for mm_geo module.
 
 ##### Test Binary GEO Data File By geot
 ```shell
 ./geot geodata.geo
-#运行之后程序会提示输入IP，输入一个IP后，会显示查询结果。
 Input a ip:1.2.4.1
 > [1.2.4.1] -----------  [1.2.4.0-1.2.4.255 BeiJing BeiJing Telecom]
 ```
@@ -237,7 +234,7 @@ Input a ip:1.2.4.1
 Authors
 =======
 
-* liuxiaojie (刘小杰)  <jie123108@163.com>
+* liuxiaojie (刘小杰)  <jie123108@gmail.com>
 
 [Back to TOC](#table-of-contents)
 
