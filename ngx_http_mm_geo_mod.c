@@ -226,15 +226,32 @@ ngx_uint_t ngx_http_get_remote_ip(ngx_http_request_t *r){
 	return ip;
 }
 
+/****
+ * 在nginx模块中使用.（需要已经包含mm_geo模块，并且相应指令已经打开）
+ ***/
+int ngx_geo_find(ngx_http_request_t *r, uint32_t ip, geo_result_t* result)
+{
+
+    ngx_http_mm_geo_main_conf_t   *gmcf;
+    gmcf = ngx_http_get_module_main_conf(r, ngx_http_mm_geo_module);
+    if(gmcf->geo_ctx == NULL || gmcf->geo_ctx->ptr == NULL){
+      return -2;
+    }
+
+    return geo_find2(gmcf->geo_ctx, ip, result);
+}
+
 ngx_int_t ngx_http_mm_geo_handler(ngx_http_request_t *r)
 {
 	static ngx_str_t x_province_key = ngx_string("x-province");
 	static ngx_str_t x_city_key = ngx_string("x-city");
 	static ngx_str_t x_isp_key = ngx_string("x-isp");
 	static ngx_str_t x_ip_key = ngx_string("x-ip");
-	
+    static ngx_str_t x_ip_begin_key = ngx_string("x-ip-begin");
+    static ngx_str_t x_ip_end_key = ngx_string("x-ip-end");
+    
     ngx_http_mm_geo_loc_conf_t* glcf = ngx_http_get_module_loc_conf(r, ngx_http_mm_geo_module);
-	if (glcf == NULL || glcf->geo <= 0) {
+	 if (glcf == NULL || glcf->geo <= 0) {
         return NGX_OK;
     }
 
@@ -246,10 +263,10 @@ ngx_int_t ngx_http_mm_geo_handler(ngx_http_request_t *r)
 	
 	uint32_t remote_ip = ngx_http_get_remote_ip(r);
 	//ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "remote_ip: %uD", remote_ip);
-	char* szip = (char*)ngx_pcalloc(r->pool, 32);
-	ngx_memzero(szip, 32);
+	char* szip = (char*)ngx_pcalloc(r->pool, 20);
+	ngx_memzero(szip, 20);
 	const char* sip = long2ip(remote_ip);
-	strncpy(szip, sip, 32);
+	strncpy(szip, sip, 20);
 
 	geo_result_t result;
 	memset(&result,0,sizeof(result));
@@ -257,14 +274,26 @@ ngx_int_t ngx_http_mm_geo_handler(ngx_http_request_t *r)
 	if(ret == 0){
 		ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, 
 					"Find ip [%s] info [%s.%s %s]", szip, result.province, result.city, result.isp);
+        char* szip_begin = (char*)ngx_pcalloc(r->connection->pool, 20);
+        sip = long2ip(result.ip_begin);
+        strncpy(szip_begin, sip, 20);
+        char* szip_end = (char*)ngx_pcalloc(r->connection->pool, 20);
+        sip = long2ip(result.ip_end);
+        strncpy(szip_end, sip, 20);
+
 		ngx_str_t x_province_value = {result.province_len, (u_char*)result.province};
 		ngx_str_t x_city_value = {result.city_len, (u_char*)result.city};
 		ngx_str_t x_isp_value = {result.isp_len, (u_char*)result.isp};
-		ngx_str_t x_ip_value = {strlen(szip), (u_char*)szip};		
+		ngx_str_t x_ip_value = {strlen(szip), (u_char*)szip};
+        ngx_str_t x_ip_begin_value = {strlen(szip_begin), (u_char*)szip_begin};
+        ngx_str_t x_ip_end_value = {strlen(szip_end), (u_char*)szip_end};
+
 		ngx_http_add_header_in(r, &x_province_key, &x_province_value);
 		ngx_http_add_header_in(r, &x_city_key, &x_city_value);
 		ngx_http_add_header_in(r, &x_isp_key, &x_isp_value);			
-		ngx_http_add_header_in(r, &x_ip_key, &x_ip_value);			
+        ngx_http_add_header_in(r, &x_ip_key, &x_ip_value);          
+        ngx_http_add_header_in(r, &x_ip_begin_key, &x_ip_begin_value);          
+        ngx_http_add_header_in(r, &x_ip_end_key, &x_ip_end_value);          
 	}else{
 		ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, 
 					"Ip [%s] not found!", szip);
