@@ -194,53 +194,24 @@ int geo_find2(geo_ctx_t* geo_ctx, uint32_t ip, geo_result_t* result)
 	}
 	int High = size - 1;
 	int Low = 0;
-	int M = size/2;
+	int M;
 
 #define IP_EQ(ip, node) (ip>=node.ip_begin && ip <=node.ip_end)
 	geo_item_t* find_item = NULL;
-	do{
-		if(IP_EQ(ip, items[M]))
+	while(Low<=High)
+	{
+		M = (Low + High)/2;
+		if(ip<items[M].ip_begin){
+			High = M-1; 
+		}else if(ip>items[M].ip_end){ 
+			Low = M+1; 
+		}else if(IP_EQ(ip, items[M]))
 		{
 			find_item = &items[M];
 			break;
 		}
-		while(Low<=High)
-		{
-			if(High-Low<=1)
-			{
-				if(IP_EQ(ip, items[Low]))
-				{
-					find_item = &items[Low];
-					break;
-				}
-				else if(IP_EQ(ip, items[High]))
-				{
-					find_item = &items[High];
-					break;
-				}
-				else
-				{
-					break;
-				}
-			}
-			
-			if(ip<items[M].ip_begin)
-			{	
-				High = M-1;
-			}
-			else if(ip>items[M].ip_end)
-			{
-				Low = M+1;
-			}
-			else if(IP_EQ(ip, items[M]))
-			{
-				find_item = &items[M];
-				break;
-			}
-
-			M = (Low + High)/2;
-		}
-	}while(0);
+	}
+	
 	if(find_item == NULL){
 		return -1;
 	}
@@ -289,6 +260,11 @@ int main(int argc, char* argv[])
 		printf("geo_init(%s) failed! ret=%d\n", filename, ret);
 		exit(2);
 	}
+	geo_head_t* head = (geo_head_t*)geo_ctx->ptr;
+	printf("head info: magic: 0x%08x, const_count:%u, const_table_offset: %u\n"
+			"\tgeo_item_count: %u, geo_item_offset: %u, filesize: %u\n",
+			head->magic, head->const_count, head->const_table_offset,
+			head->geo_item_count,head->geo_item_offset,head->filesize);
 	geo_result_t result;
 	while(1){
 		char input[64];
