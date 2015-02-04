@@ -178,6 +178,28 @@ ngx_uint_t ngx_http_get_remote_ip(ngx_http_request_t *r){
 		}
 
 		if(conf->ip_from_head){
+			//当前端为PowerDNS时，ip通过X-RemoteBackend-real-remote传递过来。
+			//https://doc.powerdns.com/md/authoritative/backend-remote/#api
+			#if 1
+			static ngx_str_t x_real_remote_key = ngx_string("x_remotebackend_real_remote");
+			ngx_http_variable_value_t v_real_remote;
+			memset(&v_real_remote,0,sizeof(v_real_remote));	
+			ngx_int_t rc = ngx_http_variable_unknown_header(&v_real_remote, &x_real_remote_key, 
+										&r->headers_in.headers.part, 0);
+						
+			if(rc == NGX_OK && v_real_remote.len > 0){
+				unsigned i;
+				for(i=0;i<v_real_remote.len;i++){
+					if((char)v_real_remote.data[i] == '/'){
+						v_real_remote.len = i;
+						break;
+					}
+				}
+				ip = ip2long((const char*)v_real_remote.data, v_real_remote.len);
+				break;
+			}
+			#endif
+			
 			if(r->headers_in.x_real_ip != NULL){
 				real_ip = &r->headers_in.x_real_ip->value;
 				ip = ip2long((const char*)real_ip->data, real_ip->len);

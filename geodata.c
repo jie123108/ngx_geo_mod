@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
 		memset(input,0,sizeof(input));
 		printf("Input a ip:");
 		scanf("%s", input);
-		if(strcmp(input,"exit")==0){
+		if(strlen(input) == 0 || strcmp(input,"exit")==0){
 			break;
 		}else if(strcmp(input, "info")==0){
 			
