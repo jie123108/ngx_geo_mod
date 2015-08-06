@@ -253,6 +253,10 @@ int main(int argc, char* argv[])
 	}
 
 	const char* filename = argv[1];
+	int quiet = 0;
+	if(argc == 3){
+		quiet = (strcmp(argv[2], "quiet")==0);
+	}
 
 	geo_ctx_t* geo_ctx = geo_new();
 	int ret = geo_init(geo_ctx, filename);
@@ -261,17 +265,23 @@ int main(int argc, char* argv[])
 		exit(2);
 	}
 	geo_head_t* head = (geo_head_t*)geo_ctx->ptr;
-	printf("head info: magic: 0x%08x, const_count:%u, const_table_offset: %u\n"
-			"\tgeo_item_count: %u, geo_item_offset: %u, filesize: %u\n",
-			head->magic, head->const_count, head->const_table_offset,
-			head->geo_item_count,head->geo_item_offset,head->filesize);
+
+	if(!quiet){
+		printf("head info: magic: 0x%08x, const_count:%u, const_table_offset: %u\n"
+				"\tgeo_item_count: %u, geo_item_offset: %u, filesize: %u\n",
+				head->magic, head->const_count, head->const_table_offset,
+				head->geo_item_count,head->geo_item_offset,head->filesize);
+	}
+
 	geo_result_t result;
 	while(1){
 		char input[64];
 		memset(input,0,sizeof(input));
-		printf("Input a ip:");
+		if(!quiet){
+			printf("Input a ip:");
+		}
 		scanf("%s", input);
-		if(strcmp(input,"exit")==0){
+		if(strlen(input) == 0 || strcmp(input,"exit")==0){
 			break;
 		}else if(strcmp(input, "info")==0){
 			
@@ -284,13 +294,23 @@ int main(int argc, char* argv[])
 			char ip_end[32];
 			memset(ip_begin,0, sizeof(ip_begin));
 			memset(ip_end,0, sizeof(ip_end));
-			
-			printf("[%s] -----------  [%s-%s %s %s %s]\n",  
-				input, long2ip2(result.ip_begin, ip_begin),
-				long2ip2(result.ip_end, ip_end),
-				result.province, result.city, result.isp);
+			if(!quiet){
+				printf("[%s] -----------  [%s-%s\t%s\t%s\t%s]\n",  
+					input, long2ip2(result.ip_begin, ip_begin),
+					long2ip2(result.ip_end, ip_end),
+					result.province, result.city, result.isp);
+			}else{
+				printf("%s\t%s\t%s\t%s\t%s\n",
+					long2ip2(result.ip_begin, ip_begin),
+					long2ip2(result.ip_end, ip_end),
+					result.province, result.city, result.isp);
+			}
 		}else{
-			printf("can not find ip: %s\n", input);
+			if(!quiet){
+				printf("can not find ip: %s\n", input);
+			}else{
+				printf("%s\t-\t-\t-\t-\t-\n", input);
+			}
 		}
 		
 	}
