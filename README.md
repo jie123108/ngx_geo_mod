@@ -1,4 +1,4 @@
-﻿# Nginx mmap geo module
+# Nginx mmap geo module
 ngx_geo_mod is a geographic location information module. According to the client IP query you can inquire the provinces, cities, ISP information, and then write them to http request header.
    
    This module contains a compiler that compiles text format geo data into binary data. This module uses this binary data, and the use of mmap to load the file to memory, does not require any analytical process.
@@ -17,7 +17,7 @@ ngx_geo_mod is a geographic location information module. According to the client
     * [ip_from_head](#ip_from_head)
     * [proxies](#proxies)
     * [proxies_recursive](#proxies_recursive)
-* [Gets The IP Order](#gets-the-ip-order)
+* [Gets The IP Order](#get-the-ip-order)
 * [Variable Usage](#variable-usage)
 * [Compile Geo Data File](#compile-geo-data-file)
     * [Geo Data File Format](#geo-data-file-format)
